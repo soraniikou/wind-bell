@@ -51,6 +51,23 @@ function touchMoved() {
     for (let i = 0; i < 3; i++) {
       particles.push(new StarDust(touches[0].x, touches[0].y));
     }
+
+    // ✨ 粒同士がぶつかった時の短い音
+function playCollisionSound() {
+  if (!audioCtx) return;
+  let oscillator = audioCtx.createOscillator();
+  let gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.type = 'sine';
+  let freq = random(400, 800);
+  oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + 0.1);
+}
+
   }
   return false; // スクロール防止
 }
