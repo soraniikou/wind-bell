@@ -1,18 +1,611 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/addons/p5.sound.min.js"></script>
-    
-    
-    
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" />
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wind bell</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap');
 
-  </head>
-  <body>
-    <main>
-    </main>
-    <script src="sketch.js"></script>
-  </body>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sky: #e8f4f8;
+    --deep: #1a2a3a;
+    --bell: #8ab4c8;
+    --gold: #c8a96e;
+    --mist: rgba(200,220,235,0.6);
+  }
+
+  body {
+    background: linear-gradient(175deg, #ddeef7 0%, #f0e8d8 60%, #e8ddd0 100%);
+    min-height: 100vh;
+    font-family: 'Noto Serif JP', serif;
+    overflow: hidden;
+    cursor: none;
+    user-select: none;
+  }
+
+  /* 背景の風の流れ */
+  .wind-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wind-streak {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(138,180,200,0.3), transparent);
+    border-radius: 50%;
+    animation: windFlow linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes windFlow {
+    0% { transform: translateX(-100vw); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.5; }
+    100% { transform: translateX(100vw); opacity: 0; }
+  }
+
+  /* メインキャンバスエリア */
+  #canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+
+  /* 風鈴 */
+  .bell-container {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    transform-origin: top center;
+  }
+
+  .bell-string {
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(180deg, rgba(100,140,160,0.8), rgba(100,140,160,0.3));
+  }
+
+  .bell-body {
+    width: 60px;
+    height: 70px;
+    position: relative;
+    animation: sway 4s ease-in-out infinite;
+    transform-origin: top center;
+  }
+
+  .bell-body svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 12px rgba(100,160,200,0.4));
+  }
+
+  .bell-tanzaku {
+    width: 20px;
+    height: 60px;
+    background: linear-gradient(180deg, #f5e6c8, #edd4a0);
+    border-radius: 2px 2px 4px 4px;
+    margin-top: 2px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    animation: tanzakuSway 4s ease-in-out infinite;
+    transform-origin: top center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    font-size: 7px;
+    color: #8a6a3a;
+    letter-spacing: 1px;
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  @keyframes tanzakuSway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+
+  /* カーソル */
+  #cursor {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,169,110,0.8), rgba(200,169,110,0.1));
+    pointer-events: none;
+    z-index: 100;
+    transform: translate(-50%, -50%);
+    transition: transform 0.05s;
+    mix-blend-mode: multiply;
+  }
+
+  #cursor::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.3);
+    animation: cursorPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cursorPulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 0; }
+  }
+
+  /* 波紋 */
+  .ripple {
+    position: fixed;
+    border-radius: 50%;
+    border: 1px solid rgba(138,180,200,0.6);
+    pointer-events: none;
+    z-index: 5;
+    transform: translate(-50%, -50%) scale(0);
+    animation: rippleOut 1.5s ease-out forwards;
+  }
+
+  @keyframes rippleOut {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+  }
+
+  /* 音符パーティクル */
+  .note {
+    position: fixed;
+    pointer-events: none;
+    z-index: 6;
+    font-size: 18px;
+    opacity: 0;
+    animation: noteFloat 2s ease-out forwards;
+  }
+
+  @keyframes noteFloat {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+    100% { transform: translateY(-80px) rotate(20deg); opacity: 0; }
+  }
+
+  /* UI */
+  .ui-panel {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .upload-btn {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(138,180,200,0.5);
+    border-radius: 30px;
+    padding: 12px 28px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    color: #3a5a6a;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+    letter-spacing: 0.05em;
+  }
+
+  .upload-btn:hover {
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 4px 20px rgba(138,180,200,0.3);
+    transform: translateY(-2px);
+  }
+
+  .hint {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: rgba(80,110,130,0.7);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: rgba(80,110,130,0.6);
+    letter-spacing: 0.05em;
+    min-height: 18px;
+    text-align: center;
+  }
+
+  /* 声の再生エフェクト */
+  #voice-aura {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,169,110,0.15), transparent 70%);
+    pointer-events: none;
+    z-index: 8;
+    opacity: 0;
+    transition: opacity 1s;
+  }
+
+  #voice-aura.active {
+    opacity: 1;
+    animation: auraBreath 2s ease-in-out infinite;
+  }
+
+  @keyframes auraBreath {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.4); }
+  }
+
+  /* カウントダウン */
+  #countdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px;
+    font-weight: 300;
+    color: rgba(138,180,200,0.4);
+    pointer-events: none;
+    z-index: 9;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  /* ファイル名表示 */
+  #file-name {
+    font-size: 11px;
+    color: rgba(100,150,170,0.7);
+    font-style: italic;
+  }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="wind-layer" id="windLayer"></div>
+<canvas id="canvas"></canvas>
+
+<div class="bell-container" id="bellContainer">
+  <div class="bell-string"></div>
+  <div class="bell-body">
+    <svg viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 風鈴本体 -->
+      <defs>
+        <linearGradient id="bellGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#b8d8e8"/>
+          <stop offset="50%" stop-color="#8ab4c8"/>
+          <stop offset="100%" stop-color="#6a94a8"/>
+        </linearGradient>
+        <linearGradient id="shineGrad" x1="0" y1="0" x2="0.5" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+        </linearGradient>
+      </defs>
+      <!-- 鐘の形 -->
+      <path d="M30 2 C20 2 10 15 10 30 C10 45 15 55 30 58 C45 55 50 45 50 30 C50 15 40 2 30 2Z" 
+            fill="url(#bellGrad)" stroke="rgba(100,160,200,0.3)" stroke-width="0.5"/>
+      <!-- 光沢 -->
+      <path d="M20 8 C18 15 17 25 20 35 C22 28 24 18 22 8Z" 
+            fill="url(#shineGrad)" opacity="0.7"/>
+      <!-- 上部の金具 -->
+      <rect x="25" y="0" width="10" height="5" rx="2" fill="url(#bellGrad)" stroke="rgba(200,180,120,0.5)" stroke-width="0.5"/>
+      <!-- 下部の緒 -->
+      <line x1="30" y1="58" x2="30" y2="65" stroke="rgba(100,140,160,0.6)" stroke-width="1"/>
+    </svg>
+  </div>
+  <div class="bell-tanzaku">風の音</div>
+</div>
+
+<div id="voice-aura"></div>
+<div id="countdown"></div>
+<div id="cursor"></div>
+
+<div class="ui-panel">
+  <div id="file-name">声のファイルを選んでください</div>
+  <label class="upload-btn" for="voiceFile">🎙 声を読み込む</label>
+  <input type="file" id="voiceFile" accept="audio/*">
+  <div class="hint">画面をなぞると、風鈴が鳴ります</div>
+  <div class="status-text" id="status"></div>
+</div>
+
+<audio id="voicePlayer"></audio>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const cursor = document.getElementById('cursor');
+const status = document.getElementById('status');
+const voiceFile = document.getElementById('voiceFile');
+const voicePlayer = document.getElementById('voicePlayer');
+const voiceAura = document.getElementById('voice-aura');
+const countdown = document.getElementById('countdown');
+const bellContainer = document.getElementById('bellContainer');
+
+let audioCtx = null;
+let voiceURL = null;
+let isPlaying = false;
+let bellTimeout = null;
+let countdownInterval = null;
+let trailPoints = [];
+let lastBellTime = 0;
+const BELL_COOLDOWN = 600; // ms
+
+// リサイズ
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// 風のストリーク生成
+function createWindStreaks() {
+  const layer = document.getElementById('windLayer');
+  for (let i = 0; i < 8; i++) {
+    const streak = document.createElement('div');
+    streak.className = 'wind-streak';
+    streak.style.top = Math.random() * 100 + 'vh';
+    streak.style.width = (60 + Math.random() * 120) + 'px';
+    streak.style.animationDuration = (6 + Math.random() * 10) + 's';
+    streak.style.animationDelay = (Math.random() * 8) + 's';
+    layer.appendChild(streak);
+  }
+}
+createWindStreaks();
+
+// AudioContext 初期化
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+// 風鈴の音 (Web Audio API - 澄んだ鐘の音)
+function playBellSound() {
+  initAudio();
+  const now = audioCtx.currentTime;
+
+  // 複数の倍音で澄んだ風鈴音を作る
+  const frequencies = [880, 1100, 1320, 1760, 2200];
+  const gains = [0.5, 0.3, 0.2, 0.15, 0.1];
+
+  frequencies.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    const panner = audioCtx.createStereoPanner();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq + (Math.random() * 20 - 10), now);
+
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(gains[i], now + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+
+    panner.pan.setValueAtTime((Math.random() * 0.6 - 0.3), now);
+
+    // 少し遅延でランダム感
+    const delay = audioCtx.createDelay();
+    delay.delayTime.setValueAtTime(i * 0.02, now);
+
+    osc.connect(gainNode);
+    gainNode.connect(delay);
+    delay.connect(panner);
+    panner.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 4);
+  });
+
+  // 風鈴を揺らす
+  shakeBell();
+}
+
+function shakeBell() {
+  bellContainer.style.animation = 'none';
+  bellContainer.style.transform = 'translateX(-50%) rotate(8deg)';
+  setTimeout(() => {
+    bellContainer.style.transition = 'transform 0.3s ease';
+    bellContainer.style.transform = 'translateX(-50%) rotate(-5deg)';
+    setTimeout(() => {
+      bellContainer.style.transition = 'transform 0.5s ease';
+      bellContainer.style.transform = 'translateX(-50%) rotate(0deg)';
+    }, 300);
+  }, 100);
+}
+
+// カウントダウンと声の再生
+function startVoiceCountdown() {
+  if (!voiceURL) return;
+  if (isPlaying) {
+    clearTimeout(bellTimeout);
+    clearInterval(countdownInterval);
+  }
+
+  isPlaying = true;
+  let count = 8;
+  status.textContent = '🎐 ８秒後に声が届きます...';
+
+  countdown.style.opacity = '1';
+  countdown.textContent = count;
+
+  countdownInterval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      countdown.textContent = count;
+    } else {
+      clearInterval(countdownInterval);
+      countdown.style.opacity = '0';
+      playVoice();
+    }
+  }, 1000);
+}
+
+function playVoice() {
+  voicePlayer.src = voiceURL;
+  voicePlayer.play();
+  voiceAura.classList.add('active');
+  status.textContent = '💫 声が流れています...';
+
+  voicePlayer.onended = () => {
+    voiceAura.classList.remove('active');
+    status.textContent = '';
+    isPlaying = false;
+  };
+}
+
+// ポインタートレイル (canvas描画)
+let lastX = 0, lastY = 0;
+let isMoving = false;
+let moveTimer = null;
+let totalMoved = 0;
+
+function onPointerMove(e) {
+  const x = e.clientX || e.touches?.[0]?.clientX;
+  const y = e.clientY || e.touches?.[0]?.clientY;
+  if (!x) return;
+
+  cursor.style.left = x + 'px';
+  cursor.style.top = y + 'px';
+
+  const dx = x - lastX;
+  const dy = y - lastY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist > 3) {
+    totalMoved += dist;
+    drawTrail(x, y);
+
+    // 一定距離移動したら風鈴を鳴らす
+    const now = Date.now();
+    if (totalMoved > 30 && now - lastBellTime > BELL_COOLDOWN) {
+      playBellSound();
+      createRipple(x, y);
+      createNote(x, y);
+      lastBellTime = now;
+      totalMoved = 0;
+
+      // 声のカウントダウン開始（鳴らすたびにリセット）
+      clearTimeout(bellTimeout);
+      clearInterval(countdownInterval);
+      countdown.style.opacity = '0';
+
+      bellTimeout = setTimeout(() => {
+        startVoiceCountdown();
+      }, 500); // 少し待ってからカウントダウン
+    }
+
+    lastX = x;
+    lastY = y;
+  }
+
+  clearTimeout(moveTimer);
+  moveTimer = setTimeout(() => { totalMoved = 0; }, 200);
+}
+
+function drawTrail(x, y) {
+  trailPoints.push({ x, y, age: 0, alpha: 0.4 });
+  if (trailPoints.length > 30) trailPoints.shift();
+}
+
+function createRipple(x, y) {
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  r.style.left = x + 'px';
+  r.style.top = y + 'px';
+  r.style.width = '40px';
+  r.style.height = '40px';
+  document.body.appendChild(r);
+  setTimeout(() => r.remove(), 1500);
+}
+
+function createNote(x, y) {
+  const notes = ['♪', '♩', '♫', '♬', '🎐'];
+  const n = document.createElement('div');
+  n.className = 'note';
+  n.textContent = notes[Math.floor(Math.random() * notes.length)];
+  n.style.left = (x + Math.random() * 30 - 15) + 'px';
+  n.style.top = (y - 10) + 'px';
+  n.style.color = `hsl(${190 + Math.random() * 40}, 50%, 60%)`;
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 2000);
+}
+
+// アニメーションループ
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // トレイル描画
+  if (trailPoints.length > 1) {
+    for (let i = 1; i < trailPoints.length; i++) {
+      const p = trailPoints[i];
+      const prev = trailPoints[i - 1];
+      const progress = i / trailPoints.length;
+
+      ctx.beginPath();
+      ctx.moveTo(prev.x, prev.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = `rgba(138,180,200,${progress * 0.4})`;
+      ctx.lineWidth = progress * 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // トレイルをフェードアウト
+    trailPoints.forEach(p => p.age++);
+    trailPoints = trailPoints.filter(p => p.age < 20);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// ファイル読み込み
+voiceFile.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    voiceURL = URL.createObjectURL(file);
+    document.getElementById('file-name').textContent = '🎙 ' + file.name;
+    status.textContent = '準備完了 — 画面をなぞってください';
+    setTimeout(() => { status.textContent = ''; }, 3000);
+  }
+});
+
+// イベント
+document.addEventListener('mousemove', onPointerMove);
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  onPointerMove(e);
+}, { passive: false });
+
+document.addEventListener('touchstart', (e) => {
+  initAudio();
+  const t = e.touches[0];
+  lastX = t.clientX;
+  lastY = t.clientY;
+});
+
+document.addEventListener('mousedown', initAudio);
+
+animate();
+</script>
+</body>
 </html>
