@@ -1,117 +1,28 @@
-let particles = [];
-let msgAlpha = 255; // 文字の透明度
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  background(10, 15, 30);
-}
-
-function draw() {
-  // 残像演出
-  background(10, 15, 30, 25); 
-
-  // メッセージの表示（ゆっくり押してほしいため、優しく表示）
-  if (msgAlpha > 0) {
-    fill(200, 220, 255, msgAlpha);
-    textAlign(CENTER, CENTER);
-    textFont('sans-serif');
-    textSize(24);
-    // 「ゆっくり押してください」の英語表現
-    text("Press gently", width / 2, height / 2);
-    
-    // 操作を始めたら徐々に消していく
-    if (mouseIsPressed || touches.length > 0) {
-      msgAlpha -= 5;
-    }
-  }
-
-  // 星屑の更新と描画
-  for (let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update();
-    particles[i].display();
-    if (particles[i].isDead()) {
-      particles.splice(i, 1);
-    }
-  }
-}
-
-function mouseMoved() {
-  if (random() > 0.8) {
-    playSlowWindBell(mouseX);
-    for (let i = 0; i < 3; i++) {
-      particles.push(new StarDust(mouseX, mouseY));
-    }
-  }
-}
-
-// タッチデバイス対応
-function touchMoved() {
-  if (random() > 0.8) {
-    playSlowWindBell(touches[0].x);
-    for (let i = 0; i < 3; i++) {
-      particles.push(new StarDust(touches[0].x, touches[0].y));
-    }
-
-    // ✨ 粒同士がぶつかった時の短い音
-function playCollisionSound() {
-  if (!audioCtx) return;
-  let oscillator = audioCtx.createOscillator();
-  let gainNode = audioCtx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  oscillator.type = 'sine';
-  let freq = random(400, 800);
-  oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  oscillator.start(audioCtx.currentTime);
-  oscillator.stop(audioCtx.currentTime + 0.1);
-}
-
-  }
-  return false; // スクロール防止
-}
-
 function playSlowWindBell(x) {
   let osc = new p5.Oscillator('sine');
   let env = new p5.Envelope();
   
-  // 余韻を長く(release 2.0)設定
-  env.setADSR(0.1, 0.5, 0.1, 2.0);
-  env.setRange(0.2, 0);
+  // ADSRの設定を調整
+  // attack: 0.2 (少しゆっくり立ち上がる)
+  // decay: 1.0
+  // sustain: 0.1
+  // release: 8.0 (ここを大きくすることで、消えゆく余韻を長くします)
+  env.setADSR(0.2, 1.0, 0.1, 8.0);
+  
+  // 最大音量を抑えることで、耳に優しく、余韻が綺麗に聞こえます
+  env.setRange(0.1, 0);
 
-  let freq = map(x, 0, width, 1500, 4000) + random(-100, 100);
+  let freq = map(x, 0, width, 1500, 3500) + random(-50, 50);
   osc.freq(freq);
   osc.amp(env);
   osc.start();
+  
+  // 音を鳴らす
   env.play();
 
-  setTimeout(() => osc.stop(), 3000);
-}
-
-class StarDust {
-  constructor(x, y) {
-    this.pos = createVector(x, y);
-    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
-    this.acc = createVector(0, 0.02);
-    this.lifespan = 255;
-    this.color = random() > 0.5 ? color(200, 230, 255) : color(255, 250, 200);
-    this.size = random(1, 4);
-  }
-
-  update() {
-    this.vel.add(this.acc);
-    this.pos.add(this.vel);
-    this.lifespan -= 2;
-  }
-
-  display() {
-    noStroke();
-    let a = map(this.lifespan, 0, 255, 0, 150);
-    fill(red(this.color), green(this.color), blue(this.color), a);
-    let sz = this.size * (sin(frameCount * 0.1) + 1.5);
-    circle(this.pos.x, this.pos.y, sz);
-  }
-
-  isDead() { return this.lifespan < 0; }
+  // releaseの時間（8000ms）＋余裕を持って停止させる
+  // これを忘れると、裏で音が鳴り続けてブラウザが重くなります
+  setTimeout(() => {
+    osc.stop();
+  }, 10000); 
 }
