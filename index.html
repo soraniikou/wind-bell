@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gently Wind Bell</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
     <style>
@@ -35,6 +36,7 @@
     </style>
 </head>
 <body>
+<p class="instruction">Touch or trace the screen to hear wind bell</p>
 
 <script>
 let particles = [];
@@ -49,14 +51,6 @@ function setup() {
 function draw() {
     // 残像演出（数値が小さいほど光の波紋が長く残る）
     background(10, 15, 30, 12); 
-
-    // メッセージ表示（常時表示）
-    fill(200, 220, 255);
-    textAlign(CENTER, BOTTOM);
-    noStroke();
-    textSize(min(32.4, width * 0.07));
-    textLeading(textSize() * 1.2);
-    text("Touch or trace the screen\nto hear wind bell", width / 2, height - 32, width - 64);
 
     // 星屑の更新と描画
     for (let i = particles.length - 1; i >= 0; i--) {
