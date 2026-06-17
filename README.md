@@ -11,7 +11,13 @@ windbellの音と共に　何か流したいこと
 
 アプリ体験🌠
 https://wind-bell.vercel.app
-<img width="359" height="200" alt="windbell" src="https://github.com/user-attachments/assets/8d9cf734-26c4-4a65-93d7-61aaf8a68e12" />
+このアプリは、あなたの情報を一切取得しません。
+wind-bell は、画面をタップしたりなぞったりすると風鈴の音が鳴るだけのアプリです。
+入力欄はなく、名前も、場所も、何も聞きません。
+あなたが触れた場所も、鳴らした音も、どこにも送信されません。
+サーバーには何も保存されません。
+ただ、音が鳴る。それだけです。
+安心して、そっと触れてみてください。
 
 ライセンス
 MIT License
