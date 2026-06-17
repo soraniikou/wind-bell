@@ -38,7 +38,6 @@
 
 <script>
 let particles = [];
-let msgAlpha = 255;
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -51,18 +50,12 @@ function draw() {
     // 残像演出
     background(10, 15, 30, 25); 
 
-    // メッセージ表示
-    if (msgAlpha > 0) {
-        fill(200, 220, 255, msgAlpha);
-        textAlign(CENTER, BOTTOM);
-        noStroke();
-        textSize(20);
-        text("Press gently", width / 2, height - 40);
-        
-        if (mouseIsPressed || (touches && touches.length > 0)) {
-            msgAlpha -= 5;
-        }
-    }
+    // メッセージ表示（常時表示）
+    fill(200, 220, 255);
+    textAlign(CENTER, BOTTOM);
+    noStroke();
+    textSize(18);
+    text("Touch or trace the screen to hear wind bell", width / 2, height - 40, width - 48);
 
     // 星屑の更新と描画
     for (let i = particles.length - 1; i >= 0; i--) {
