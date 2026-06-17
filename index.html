@@ -41,15 +41,43 @@
 <script>
 let particles = [];
 
+const BG_COLORS = [
+    [10, 15, 30],   // 初期
+    [32, 42, 68],   // 明るい初期色
+    [52, 20, 72],   // 紫
+    [16, 38, 82],   // 青
+    [10, 46, 40],   // 深緑
+    [18, 58, 34],   // 緑
+    [78, 34, 16],   // 夕方の暗いオレンジ
+    [92, 58, 78],   // 薄いピンク
+];
+const BG_SEGMENT_MS = 6000;
+
+function getBackgroundRGB() {
+    const n = BG_COLORS.length;
+    const t = millis() % (n * BG_SEGMENT_MS);
+    const segment = Math.floor(t / BG_SEGMENT_MS);
+    const progress = (t % BG_SEGMENT_MS) / BG_SEGMENT_MS;
+    const from = BG_COLORS[segment];
+    const to = BG_COLORS[(segment + 1) % n];
+    return [
+        lerp(from[0], to[0], progress),
+        lerp(from[1], to[1], progress),
+        lerp(from[2], to[2], progress),
+    ];
+}
+
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    background(10, 15, 30);
+    let [r, g, b] = getBackgroundRGB();
+    background(r, g, b);
     // 音の開始にはユーザーの操作が必要なため、ここで一度オーディオコンテキストを準備
     userStartAudio();
 }
 
 function draw() {
-    background(10, 15, 30, 40);
+    let [r, g, b] = getBackgroundRGB();
+    background(r, g, b, 40);
 
     // 星屑の更新と描画
     for (let i = particles.length - 1; i >= 0; i--) {
