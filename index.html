@@ -54,10 +54,10 @@ function draw() {
     // メッセージ表示
     if (msgAlpha > 0) {
         fill(200, 220, 255, msgAlpha);
-        textAlign(CENTER, CENTER);
+        textAlign(CENTER, BOTTOM);
         noStroke();
         textSize(20);
-        text("Press gently", width / 2, height / 2);
+        text("Press gently", width / 2, height - 40);
         
         if (mouseIsPressed || (touches && touches.length > 0)) {
             msgAlpha -= 5;
