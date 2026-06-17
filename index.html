@@ -52,10 +52,11 @@ function draw() {
 
     // メッセージ表示（常時表示）
     fill(200, 220, 255);
-    textAlign(CENTER, CENTER);
+    textAlign(CENTER, BOTTOM);
     noStroke();
-    textSize(32.4);
-    text("Touch or trace the screen to hear wind bell", width / 2, height / 2, width - 48);
+    textSize(min(32.4, width * 0.07));
+    textLeading(textSize() * 1.2);
+    text("Touch or trace the screen\nto hear wind bell", width / 2, height - 32, width - 64);
 
     // 星屑の更新と描画
     for (let i = particles.length - 1; i >= 0; i--) {
